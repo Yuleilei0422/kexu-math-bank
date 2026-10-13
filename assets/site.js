@@ -1,4 +1,4 @@
-/* 課序公開展示：所有狀態只存在此頁記憶體，不呼叫後端。 */
+/* 課序公開展示：派發示範暫存在同一分頁，不呼叫後端。 */
 const root = document.body.dataset.root || './';
 const page = document.body.dataset.page;
 const questions = [
@@ -15,20 +15,20 @@ const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 const math = value => `<span class="math-text">${escape(value)}</span>`;
 const button = (name,action,kind='') => `<button class="button ${kind}" data-action="${action}">${name}</button>`;
 const selected = new Set();
-let tab='questions',focus='q1',search='',track='',unit='',studentMode='online',studentSequence=1;
+let tab=new URLSearchParams(location.search).get('tab')==='sequence'?'sequence':'questions',focus='q1',search='',track='',unit='',studentMode='online',studentSequence=1;
 const drafts = {};
 function typeset(){ if(window.renderMathInElement)renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false,trust:false}); }
-function banner(){return '<div class="demo-banner">展示版｜登入、交卷尚未開放</div>';}
+function banner(){return '<div class="demo-banner">展示版｜派發與完成操作僅供示範</div>';}
 function shell(content,role='teacher'){
- const nav=role==='teacher'?[['questions','題庫與詳解'],['builder','考卷編輯台'],['sequence','學生練習流程']]:[['practice','本次練習'],['upload','紙本回傳預覽']];
- document.querySelector('#app').innerHTML=`${banner()}<div class="site-wrap"><header class="site-header"><a class="brand" href="${root}">課序<span>數學題庫</span></a><nav class="site-nav" aria-label="${role==='teacher'?'教師':'學生'}功能">${nav.map(([id,label])=>`<button data-tab="${id}" class="${(role==='teacher'?tab:studentMode==='upload'?'upload':'practice')===id?'active':''}">${label}</button>`).join('')}</nav><a class="home-link" href="${root}">首頁</a></header><main class="main">${content}</main></div>`;
+ const nav=role==='teacher'?[['questions','題庫與詳解'],['builder','考卷編輯台'],['sequence','學生與派發']]:[['practice','我的練習'],['history','完成紀錄']];
+ document.querySelector('#app').innerHTML=`${banner()}<div class="site-wrap"><header class="site-header"><a class="brand" href="${root}">課序<span>數學題庫</span></a><nav class="site-nav" aria-label="${role==='teacher'?'教師':'學生'}功能">${nav.map(([id,label])=>`<button data-tab="${id}" class="${(role==='teacher'?tab:studentMode==='history'?'history':'practice')===id?'active':''}">${label}</button>`).join('')}</nav><a class="home-link" href="${root}">首頁</a></header><main class="main">${content}</main></div>`;
  typeset();
 }
 function heading(title,text){return `<header class="page-heading"><div><h1>${title}</h1>${text?`<p>${text}</p>`:''}</div></header>`;}
 function solution(q){return `<div class="solution-block"><h3>詳解</h3><div class="answer-line">答案 <strong>${math(q.options.length?q.answer+' · '+q.options[q.answer.charCodeAt(0)-65]:q.answer)}</strong></div><ol>${q.steps.map(s=>`<li>${math(s)}</li>`).join('')}</ol><details class="teaching-notes"><summary>教學補充</summary><dl><dt>核心考點</dt><dd>${q.concept}</dd><dt>常見錯誤</dt><dd>${q.mistake}</dd><dt>教學提示</dt><dd>${q.tip}</dd></dl></details></div>`;}
 function printLink(variant){const ids=[...selected].join(',');return `<a class="button" href="${root}print/?variant=${variant}&q=${encodeURIComponent(ids)}" target="_blank" rel="noopener">${variant==='teacher'?'教師詳解':'學生卷'} · 列印／存PDF</a>`;}
 function teacher(){
- let content=heading(tab==='questions'?'題庫與備課詳解':tab==='builder'?'考卷編輯台':'學生循序練習','');
+ let content=heading(tab==='questions'?'題庫與備課詳解':tab==='builder'?'考卷編輯台':'學生與派發','');
 
  if(tab==='questions'){
   const list=questions.filter(q=>(!track||q.track===track)&&(!unit||q.unit===unit)&&(!search||[q.stem,q.unit,q.course].join(' ').includes(search)));
@@ -37,31 +37,22 @@ function teacher(){
  }else if(tab==='builder'){
   content+=`<div class="builder-layout"><section class="panel"><h2>示範選題</h2><p class="muted-text">每次離開或重整頁面，示範選題會清空。</p><div class="ordered-list">${[...selected].map((id,i)=>{const q=questions.find(q=>q.id===id);return `<div class="ordered-row"><span class="number">${i+1}</span><div><strong>${math(q.stem)}</strong><small>${q.unit}</small></div><div class="order-actions"><button data-action="toggle:${id}" aria-label="移除第${i+1}題">移除</button></div></div>`;}).join('')||'<div class="empty"><h3>先選幾道題目</h3><p>從題庫加入題目，再預覽學生卷與詳解。</p></div>'}${button('回到題庫選題','questions')}</div></section><section class="panel"><h2>配對列印預覽</h2><p class="muted-text">展示版使用瀏覽器列印。開啟預覽後選「另存為 PDF」，可查看自編示範卷的排版。</p>${selected.size?`<div class="pdf-links">${printLink('student')}${printLink('teacher')}</div>`:'<div class="notice info">請先選至少一道題目。</div>'}<p class="muted-text">正式版本才會用後端產生固定卷、保存出卷快照並派給學生。</p></section></div>`;
  }else{
-  content+=`<section class="panel"><h2>交卷後自動接續的設計</h2><ol class="demo-steps"><li>教師選範圍與題數，派發第一份練習。</li><li>學生線上作答，或回傳紙本照片／PDF。</li><li>正式有效交卷後，系統保存收據並提供唯一下一份。</li><li>教師批閱詳解與作答，回饋留在學生歷史。</li></ol><div class="notice info">這裡只展示流程，沒有學生名單、派卷或真實交卷。</div><a class="button primary" href="${root}student/">查看學生介面 →</a></section>`;
+  content+=dispatchPanel();
  }
  shell(content);
 }
-function student(){
- const qs=studentSequence===1?questions.slice(0,2):questions.slice(4,6);
- let content=heading('學生練習','試填不儲存；交卷尚未開放。');
- content+=`<section class="assignment-header"><div><span class="badge green">第 ${studentSequence} 份 · 預覽</span><h2>數學單元練習</h2><p>2 題 · 自編示範 · 無派卷與交卷服務</p></div>${button('預覽另一份練習','next')}</section><div class="practice-toolbar"><div class="segmented">${button('線上作答预覽','online',studentMode==='online'?'active':'')}${button('紙本回傳預覽','upload',studentMode==='upload'?'active':'')}</div></div>`;
- if(studentMode==='upload') content+=`<section class="panel paper-upload"><h2>紙本回傳介面</h2><p>正式版可上傳作答照片或PDF並調整附件順序。展示版不接受或讀取任何檔案。</p><div class="dropzone"><strong>JPG、PNG 或 PDF</strong><span>檔案選取與上傳未啟用</span></div><div class="notice info">這是版面預覽，不會建立交卷收據或自動派卷。</div><button class="button primary" disabled>回傳與交卷 · 展示版未啟用</button></section>`;
- else content+=`<div class="practice-questions">${qs.map((q,i)=>`<section class="practice-question"><div class="practice-question-heading"><span class="question-number">0${i+1}</span><span>${q.type} · 示範</span><span class="unit-tag">${q.unit}</span></div><h3>${math(q.stem)}</h3>${q.options.length?`<div class="answer-options">${q.options.map((o,k)=>`<label><input type="radio" name="${q.id}" value="${String.fromCharCode(65+k)}" ${drafts[q.id]===String.fromCharCode(65+k)?'checked':''}><strong>${String.fromCharCode(65+k)}</strong>${math(o)}</label>`).join('')}</div>`:`<label>示範答案<textarea name="${q.id}" aria-label="第${i+1}題示範答案" placeholder="可試填；重整後清空">${escape(drafts[q.id]||'')}</textarea></label>`}<p class="muted-text">此題僅供體驗，不計分、不提交。</p></section>`).join('')}<div class="submission-footer"><div><strong>展示版不提供真實交卷</strong><p>正式版才會保存收據、續卷及教師回饋。</p></div><button class="button primary" disabled>正式交卷 · 未啟用</button></div></div>`;
- shell(content,'student');
-}
+function student(){renderAssignedStudent();}
 function home(){document.querySelector('#app').innerHTML=`${banner()}<main class="simple-home"><h1>課序數學題庫</h1><p>高中、高職數學題庫與練習。</p><div class="home-actions"><a class="button primary" href="teacher/">教師：題庫與組卷</a><a class="button" href="student/">學生：練習預覽</a></div><p class="home-note">8 題自編示範；無須登入。</p><a class="repo-link" href="https://github.com/Yuleilei0422/kexu-math-bank" target="_blank" rel="noopener">GitHub</a></main>`;}
-function print(){const p=new URLSearchParams(location.search),teacherVersion=p.get('variant')==='teacher',ids=(p.get('q')||'').split(','),qs=questions.filter(q=>ids.includes(q.id));document.querySelector('#app').innerHTML=`<div class="print-actions">${button('列印／另存 PDF','print','primary')}<a class="button" href="${root}teacher/">回教師展示</a><p>展示自編題；學生卷與教師詳解在此都是公開預覽。</p></div><div class="print-paper"><header><span class="eyebrow">課序 · 公開展示</span><h1>數學示範練習卷</h1><p>${teacherVersion?'教師備課詳解':'學生作答卷'} · ${qs.length} 題 · 自編示範</p>${teacherVersion?'':'<p>姓名：＿＿＿＿＿＿　日期：＿＿＿＿＿＿</p>'}</header>${qs.map((q,i)=>`<article><h2>${i+1}. ${math(q.stem)}</h2>${q.options.length?`<ol type="A">${q.options.map(o=>`<li>${math(o)}</li>`).join('')}</ol>`:''}${teacherVersion?solution(q):'<div class="answer-space"></div>'}</article>`).join('')||'<p>尚未選題，請回教師展示選題。</p>'}</div>`;typeset();}
+function print(){const p=new URLSearchParams(location.search),teacherVersion=p.get('variant')==='teacher',ids=(p.get('q')||'').split(','),qs=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);document.querySelector('#app').innerHTML=`<div class="print-actions">${button('列印／另存 PDF','print','primary')}<a class="button" href="${root}teacher/">回教師展示</a><p>展示自編題；學生卷與教師詳解在此都是公開預覽。</p></div><div class="print-paper"><header><span class="eyebrow">課序 · 公開展示</span><h1>數學示範練習卷</h1><p>${teacherVersion?'教師備課詳解':'學生作答卷'} · ${qs.length} 題 · 自編示範</p>${teacherVersion?'':'<p>姓名：＿＿＿＿＿＿　日期：＿＿＿＿＿＿</p>'}</header>${qs.map((q,i)=>`<article><h2>${i+1}. ${math(q.stem)}</h2>${q.options.length?`<ol type="A">${q.options.map(o=>`<li>${math(o)}</li>`).join('')}</ol>`:''}${teacherVersion?solution(q):'<div class="answer-space"></div>'}</article>`).join('')||'<p>尚未選題，請回教師展示選題。</p>'}</div>`;typeset();}
 document.addEventListener('click',event=>{
  const el=event.target.closest('button');if(!el)return;
  if(el.dataset.focus){focus=el.dataset.focus;teacher();return;}
- if(el.dataset.tab){if(page==='teacher'){tab=el.dataset.tab;teacher();}else{studentMode=el.dataset.tab==='upload'?'upload':'online';student();}return;}
+ if(el.dataset.tab){if(page==='teacher'){tab=el.dataset.tab;teacher();}else{studentMode=el.dataset.tab==='history'?'history':'online';student();}return;}
  const action=el.dataset.action;if(!action)return;
- if(action==='menu'){document.querySelector('.sidebar').classList.toggle('is-open');return;}
  if(action==='print'){window.print();return;}
- if(action.startsWith('toggle:')){const id=action.slice(7);selected.has(id)?selected.delete(id):selected.add(id);teacher();}
+ if(action.startsWith('toggle:')){const id=action.slice(7);dispatchPreview=null;selected.has(id)?selected.delete(id):selected.add(id);teacher();}
  else if(['questions','builder'].includes(action)){tab=action;teacher();}
  else if(['online','upload'].includes(action)){studentMode=action;student();}
- else if(action==='next'){studentSequence=studentSequence===1?2:1;student();}
 });
 document.addEventListener('change',event=>{const el=event.target;if(el.id==='track'){track=el.value;teacher();}else if(el.id==='unit'){unit=el.value;teacher();}else if(page==='student'&&el.name){drafts[el.name]=el.value;}});
 document.addEventListener('input',event=>{const el=event.target;if(el.id==='search'){const position=el.selectionStart;search=el.value;teacher();const input=document.querySelector('#search');input.focus();input.setSelectionRange(position,position);}else if(page==='student'&&el.name)drafts[el.name]=el.value;});

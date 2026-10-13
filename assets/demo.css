@@ -45,6 +45,11 @@ input,select,textarea,.badge,.segmented{border-radius:3px}
 .practice-question h3{font-size:16px;margin-bottom:15px}.answer-options label{padding:9px 11px;border-radius:3px}
 .notice{border-radius:3px;background:#f7f7f7!important;border-color:var(--line)!important;color:#777!important;font-size:12px}
 .demo-steps{font-size:13px;line-height:2;padding-left:23px}
+.submission-footer{position:static;bottom:auto}
+.dispatch-notice{font-size:12px;color:#777;margin-bottom:18px}
+.dispatch-records{margin-top:20px}.dispatch-record{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:15px 0;border-top:1px solid var(--line)}
+.dispatch-record p{font-size:12px;color:#777;margin-top:5px}.dispatch-actions{display:flex;gap:7px;flex-wrap:wrap}.dispatch-records>h2{margin-bottom:15px}
+#dispatch-form .teaching-notes{margin-top:20px}.panel ol{padding-left:23px;line-height:1.9}
 .print-actions{margin:20px auto;max-width:850px;display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:0 20px}
 .print-actions p{font-size:12px;color:var(--muted);width:100%}
 .print-paper{max-width:850px;padding:40px;margin:20px auto;background:white}
@@ -62,6 +67,7 @@ input,select,textarea,.badge,.segmented{border-radius:3px}
  .question-list{max-height:280px;border-right:0;border-bottom:1px solid var(--line)}
  .question-row{padding:12px 15px}.question-detail{padding:17px}.question-detail h2{font-size:16px}
  .builder-layout{grid-template-columns:1fr}.panel,.practice-question{padding:17px}
+ .dispatch-record{align-items:start;flex-direction:column}.dispatch-actions .button{font-size:12px}
  .assignment-header{flex-direction:column;align-items:start;gap:10px}.assignment-header .button{width:auto}
  .practice-toolbar .segmented .button{font-size:11px;padding:7px 9px}.practice-question h3{font-size:15px}
  .print-paper{padding:18px;margin:12px}.print-paper h1{font-size:24px}
