@@ -18,6 +18,33 @@
     const start=(plan.sequence-1)*plan.perPaper,ids=plan.questionIds.slice(start,start+plan.perPaper);
     return ids.length===plan.perPaper?ids:[];
   }
+  function numericAnswer(raw){
+    if(typeof raw!=='string'||raw.length>120)return null;
+    const value=raw.normalize('NFKC').replace(/−/g,'-').trim().replace(/^x\s*=\s*/i,'').trim();
+    const number='[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)';
+    const match=value.match(new RegExp('^('+number+')(?:\\s*/\\s*('+number+'))?\\s*(%)?$'));
+    if(!match)return null;
+    const denominator=match[2]===undefined?1:Number(match[2]);
+    const result=Number(match[1])/denominator/(match[3]?100:1);
+    return denominator!==0&&Number.isFinite(result)?result:null;
+  }
+  function gradeAnswer(q,answer){
+    if(answer.skipped)return {status:'skipped'};
+    if(q.options.length){
+      const choices=q.options.map((_,i)=>String.fromCharCode(65+i));
+      if(!choices.includes(q.answer)||!choices.includes(answer.value))return {status:'review'};
+      return {status:answer.value===q.answer?'correct':'incorrect'};
+    }
+    const expected=numericAnswer(q.answer),actual=numericAnswer(answer.value);
+    if(expected===null||actual===null)return {status:'review'};
+    return {status:Math.abs(expected-actual)<=1e-9*Math.max(1,Math.abs(expected))?'correct':'incorrect'};
+  }
+  function gradePaper(ids,answers,questions){
+    const items=ids.map(id=>({questionId:id,...gradeAnswer(questions.find(q=>q.id===id),answers[id])}));
+    const count=status=>items.filter(item=>item.status===status).length;
+    const correct=count('correct'),review=count('review');
+    return {version:1,items,correct,incorrect:count('incorrect'),skipped:count('skipped'),review,total:ids.length,score:review?null:Math.round(correct/ids.length*100)};
+  }
   function complete(plan,sequence,answers,questions){
     if(plan.receipts.some(r=>r.sequence===sequence))return plan;
     if(plan.status!=='active'||sequence!==plan.sequence)throw Error('這份練習尚不可完成。');
@@ -28,7 +55,9 @@
       if(!q||!a||typeof a.value!=='string'||typeof a.skipped!=='boolean')throw Error('每題請作答或明示不會。');
       if(!a.skipped&&(!a.value.trim()||q.options.length&&!q.options.some((_,i)=>String.fromCharCode(65+i)===a.value)))throw Error('每題請作答或明示不會。');
     }
-    const next={...plan,receipts:[...plan.receipts,{sequence,questionIds:ids,answers:JSON.parse(JSON.stringify(answers))}],sequence:sequence+1};
+    const submitted=Object.fromEntries(ids.map(id=>[id,{value:answers[id].value,skipped:answers[id].skipped}]));
+    const receipt={sequence,questionIds:ids,answers:submitted,completedAt:new Date().toISOString(),grading:gradePaper(ids,submitted,questions)};
+    const next={...plan,receipts:[...plan.receipts,receipt],sequence:sequence+1};
     if(plan.mode==='single'||next.questionIds.length-(next.sequence-1)*next.perPaper<next.perPaper)next.status='completed';
     return next;
   }
@@ -52,5 +81,5 @@
     const plan=create({studentId:input.track==='普高'?'general':'vocational',title:input.unit+'練習',mode:'sequence',perPaper:Math.min(2,ids.length),questionIds:ids},questions.map(q=>q.id));
     return {...plan,origin:'self',studentId:'self:'+profileKey,studentName:name,profileKey,track:input.track,grade,unit:input.unit};
   }
-  global.KexuDispatch=Object.freeze({students,create,currentIds,complete,setStatus,unitsFor,createSelf});
+  global.KexuDispatch=Object.freeze({students,create,currentIds,complete,setStatus,unitsFor,createSelf,gradeAnswer,gradePaper});
 })(globalThis);
