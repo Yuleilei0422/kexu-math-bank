@@ -37,5 +37,20 @@
     if(['completed','ended'].includes(plan.status))throw Error('這輪已結束，請建立新的練習。');
     return {...plan,status};
   }
-  global.KexuDispatch=Object.freeze({students,create,currentIds,complete,setStatus});
+  function unitsFor(questions,track,grade){return [...new Set(questions.filter(q=>q.track===track&&q.grade===Number(grade)).map(q=>q.unit))];}
+  function createSelf(input,questions,plans=[]){
+    if(typeof input.name!=='string'||!input.name.trim()||input.name.trim().length>40)throw Error('請選擇或輸入40字內的姓名。');
+    const name=input.name.trim(),profileKey=name.normalize('NFKC').toLowerCase(),grade=Number(input.grade);
+    if(!['普高','技高'].includes(input.track)||![1,2,3].includes(grade))throw Error('請選擇高中／高職及年級。');
+    const matching=questions.filter(q=>q.track===input.track&&q.grade===grade&&q.unit===input.unit);
+    if(!matching.length)throw Error('這個單元尚無示範題目，請選擇其他單元。');
+    const pending=plans.find(p=>p.origin==='self'&&p.profileKey===profileKey&&['active','paused'].includes(p.status));
+    if(pending)return pending;
+    const used=new Set(plans.filter(p=>p.origin==='self'&&p.profileKey===profileKey&&p.track===input.track&&p.grade===grade&&p.unit===input.unit).flatMap(p=>p.receipts.flatMap(r=>r.questionIds)));
+    const ids=matching.filter(q=>!used.has(q.id)).map(q=>q.id);
+    if(!ids.length)throw Error('這個單元的示範題已練完，暫無新題可出卷。');
+    const plan=create({studentId:input.track==='普高'?'general':'vocational',title:input.unit+'練習',mode:'sequence',perPaper:Math.min(2,ids.length),questionIds:ids},questions.map(q=>q.id));
+    return {...plan,origin:'self',studentId:'self:'+profileKey,studentName:name,profileKey,track:input.track,grade,unit:input.unit};
+  }
+  global.KexuDispatch=Object.freeze({students,create,currentIds,complete,setStatus,unitsFor,createSelf});
 })(globalThis);

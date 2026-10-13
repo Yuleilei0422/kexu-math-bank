@@ -11,6 +11,24 @@ const questions = [
   {id:'q7',track:'技高',course:'共同數學',unit:'一元一次方程式',type:'計算題',stem:'解方程式 $3x+2=14$。',options:[],answer:'4',steps:['兩邊同減2，得到 $3x=12$。','兩邊同除以3，得到 $x=4$。'],concept:'等式運算',mistake:'只改變等式一邊。',tip:'以天平比喻兩邊做相同運算。'},
   {id:'q8',track:'普高',course:'共同數學',unit:'機率',type:'單選題',stem:'擲一次公平骰子，出現偶數點的機率為何？',options:['$1/6$','$1/3$','$1/2$','$2/3$'],answer:'C',steps:['偶數點為2、4、6，共3種。','所有等可能結果6種，故 $3/6=1/2$。'],concept:'古典機率',mistake:'把有利結果數當成機率。',tip:'先列完整樣本空間，再圈出有利結果。'}
 ];
+questions.forEach(q=>q.grade=['q1','q2','q7'].includes(q.id)?1:['q3','q4','q5','q6'].includes(q.id)?2:3);
+function addStudentQuestion(id,track,grade,unit,stem,answer,steps){questions.push({id,track,grade,unit,course:'示範數學',type:'計算題',stem,options:[],answer,steps,concept:unit,mistake:'先確認題目條件，避免漏算或錯用運算。',tip:'請學生寫出算式，再逐步核對答案。'});}
+addStudentQuestion('q9','普高',1,'指數與對數','計算 $2^5$。','32',['將2連乘5次。','$2×2×2×2×2=32$。']);
+addStudentQuestion('q10','普高',1,'指數與對數','100 的常用對數為何？','2',['常用對數以10為底。','$10^2=100$，故答案為2。']);
+addStudentQuestion('q11','普高',2,'數列與級數','等差數列首項2、公差3，求第4項。','11',['從首項到第4項增加3次公差。','$2+3×3=11$。']);
+addStudentQuestion('q12','普高',2,'數列與級數','等比數列首項3、公比2，求第4項。','24',['第4項是首項乘3次公比。','$3×2^3=24$。']);
+addStudentQuestion('q13','普高',3,'機率','擲一次公平硬幣，出現正面的機率為何？','1/2',['正反面有2種等可能結果。','正面占1種，故機率為 $1/2$。']);
+addStudentQuestion('q14','普高',3,'機率','擲一次公平骰子，點數大於4的機率為何？','1/3',['符合的點數為5、6，共2種。','$2/6=1/3$。']);
+addStudentQuestion('q15','普高',3,'機率','獨立擲兩次公平硬幣，兩次都是正面的機率為何？','1/4',['每次正面的機率為 $1/2$。','獨立事件相乘，得到 $1/2×1/2=1/4$。']);
+addStudentQuestion('q16','技高',1,'一元一次方程式','解方程式 $2x-5=7$。','6',['兩邊加5，得 $2x=12$。','兩邊除以2，得 $x=6$。']);
+addStudentQuestion('q17','技高',1,'一元一次方程式','解方程式 $5x=20$。','4',['兩邊除以5。','$x=20/5=4$。']);
+addStudentQuestion('q18','技高',1,'一元一次方程式','解方程式 $x/2+3=7$。','8',['兩邊減3，得 $x/2=4$。','兩邊乘2，得 $x=8$。']);
+addStudentQuestion('q19','技高',2,'計數原理','3件不同上衣與4件不同褲子，各選一件，共有幾種搭配？','12',['每件上衣可配4件褲子。','$3×4=12$ 種。']);
+addStudentQuestion('q20','技高',2,'計數原理','4本不同的書排成一列，共有幾種排列？','24',['依序有4、3、2、1種選擇。','$4×3×2×1=24$ 種。']);
+addStudentQuestion('q21','技高',3,'統計','資料 $2,4,6$ 的平均數為何？','4',['先求和 $2+4+6=12$。','再除以3，得 $12/3=4$。']);
+addStudentQuestion('q22','技高',3,'統計','資料 $1,3,8$ 的中位數為何？','3',['資料已由小至大排列。','3個資料的正中央是第2個值3。']);
+addStudentQuestion('q23','技高',3,'統計','資料 $1,2,2,3$ 的眾數為何？','2',['2出現2次，其餘各出現1次。','出現最多次的值為2。']);
+addStudentQuestion('q24','技高',3,'統計','資料 $2,5,9$ 的全距為何？','7',['全距是最大值減最小值。','$9-2=7$。']);
 const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const math = value => `<span class="math-text">${escape(value)}</span>`;
 const button = (name,action,kind='') => `<button class="button ${kind}" data-action="${action}">${name}</button>`;
@@ -42,7 +60,7 @@ function teacher(){
  shell(content);
 }
 function student(){renderAssignedStudent();}
-function home(){document.querySelector('#app').innerHTML=`${banner()}<main class="simple-home"><h1>課序數學題庫</h1><p>高中、高職數學題庫與練習。</p><div class="home-actions"><a class="button primary" href="teacher/">教師：題庫與組卷</a><a class="button" href="student/">學生：練習預覽</a></div><p class="home-note">8 題自編示範；無須登入。</p><a class="repo-link" href="https://github.com/Yuleilei0422/kexu-math-bank" target="_blank" rel="noopener">GitHub</a></main>`;}
+function home(){document.querySelector('#app').innerHTML=`${banner()}<main class="simple-home"><h1>課序數學題庫</h1><p>高中、高職數學題庫與練習。</p><div class="home-actions"><a class="button primary" href="teacher/">教師：題庫與組卷</a><a class="button" href="student/">學生：開始練習</a></div><p class="home-note">${questions.length} 題自編示範；無須登入。</p><a class="repo-link" href="https://github.com/Yuleilei0422/kexu-math-bank" target="_blank" rel="noopener">GitHub</a></main>`;}
 function print(){const p=new URLSearchParams(location.search),teacherVersion=p.get('variant')==='teacher',ids=(p.get('q')||'').split(','),qs=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);document.querySelector('#app').innerHTML=`<div class="print-actions">${button('列印／另存 PDF','print','primary')}<a class="button" href="${root}teacher/">回教師展示</a><p>展示自編題；學生卷與教師詳解在此都是公開預覽。</p></div><div class="print-paper"><header><span class="eyebrow">課序 · 公開展示</span><h1>數學示範練習卷</h1><p>${teacherVersion?'教師備課詳解':'學生作答卷'} · ${qs.length} 題 · 自編示範</p>${teacherVersion?'':'<p>姓名：＿＿＿＿＿＿　日期：＿＿＿＿＿＿</p>'}</header>${qs.map((q,i)=>`<article><h2>${i+1}. ${math(q.stem)}</h2>${q.options.length?`<ol type="A">${q.options.map(o=>`<li>${math(o)}</li>`).join('')}</ol>`:''}${teacherVersion?solution(q):'<div class="answer-space"></div>'}</article>`).join('')||'<p>尚未選題，請回教師展示選題。</p>'}</div>`;typeset();}
 document.addEventListener('click',event=>{
  const el=event.target.closest('button');if(!el)return;
